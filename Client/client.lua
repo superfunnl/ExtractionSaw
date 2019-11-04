@@ -20,6 +20,12 @@ end)
 
 RegisterNetEvent('ExtractionSaw:checkjob')
 AddEventHandler('ExtractionSaw:checkjob', function()
-	correctjob = (ESX.PlayerData.job.name = "fire") ? true : false;
-	TriggerEvent("ExtractionSaw:correctJob", correctjob)
+	if ESX.PlayerData.job == nil then
+		-- deze check kan weg
+	end
+	if ESX.PlayerData.job.name == "fire" then
+		TriggerEvent("ExtractionSaw:correctJob", true)
+	else
+		TriggerEvent("ExtractionSaw:correctJob", false)
+	end
 end)
