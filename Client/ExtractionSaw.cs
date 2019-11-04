@@ -34,6 +34,8 @@ namespace Client
         public bool KeyHolding = false;
         public int KeyHoldStartTime = 0;
 
+        public bool correctjob = false;
+
         // Inital BaseScript Call
         public ExtractionSaw()
         {
@@ -41,6 +43,7 @@ namespace Client
             EventHandlers.Add("ExtractionSaw:StartSawSync", new Action<int>(StartSaw));
             EventHandlers.Add("ExtractionSaw:StopSawSync", new Action<int>(StopSaw));
             EventHandlers.Add("ExtractionSaw:RemoteDoorCut", new Action<int, int>(RemoteDoorCut));
+            EventHandlers.Add("ExtractionSaw:correctJob", new Action<bool>(iscorrectjob));
             Tick += OnTick;
 
             // Initialize Client
@@ -100,13 +103,17 @@ namespace Client
                         var CheckedVehicle = CheckCastedVehicle(truck);
                         if (CheckedVehicle != null)
                         {
-                            World.DrawMarker(MarkerType.HorizontalCircleSkinny, truck.GetOffsetPosition(CheckedVehicle.MarkerPos), new Vector3(0f, 0f, 0f), new Vector3(0f, 0f, 0f), new Vector3(1f, 1f, 1f), System.Drawing.Color.FromArgb(255, 0, 0), false, false, true, null, null, false);
-                            if (World.GetDistance(LocalPlayer.Character.Position, truck.GetOffsetPosition(CheckedVehicle.MarkerPos)) <= 1.2f)
+                            TriggerEvent("ExtractionSaw:checkjob");
+                            if (correctjob == true)
                             {
-                                Screen.DisplayHelpTextThisFrame($"~INPUT_PICKUP~ Retrieve Saw");
-                                if (Game.IsControlJustPressed(1, Control.Pickup))
+                                World.DrawMarker(MarkerType.HorizontalCircleSkinny, truck.GetOffsetPosition(CheckedVehicle.MarkerPos), new Vector3(0f, 0f, 0f), new Vector3(0f, 0f, 0f), new Vector3(1f, 1f, 1f), System.Drawing.Color.FromArgb(255, 0, 0), false, false, true, null, null, false);
+                                if (World.GetDistance(LocalPlayer.Character.Position, truck.GetOffsetPosition(CheckedVehicle.MarkerPos)) <= 1.2f)
                                 {
-                                    await RetrieveSaw();
+                                    Screen.DisplayHelpTextThisFrame($"~INPUT_PICKUP~ Pak zaag uit voertuig");
+                                    if (Game.IsControlJustPressed(1, Control.Pickup))
+                                    {
+                                        await RetrieveSaw();
+                                    }
                                 }
                             }
                         }
@@ -123,7 +130,7 @@ namespace Client
                         World.DrawMarker(MarkerType.HorizontalCircleSkinny, closestSawPos, new Vector3(0f, 0f, 0f), new Vector3(0f, 0f, 0f), new Vector3(1f, 1f, 1f), System.Drawing.Color.FromArgb(255, 0, 0), false, false, true, null, null, false);
                         if (closestSawDistance <= 1.2f)
                         {
-                            Screen.DisplayHelpTextThisFrame($"~INPUT_PICKUP~ Pickup Saw");
+                            Screen.DisplayHelpTextThisFrame($"~INPUT_PICKUP~ Pak zaag op");
                             if (Game.IsControlJustPressed(1, Control.Pickup))
                             {
                                 await PickupSaw(closestSaw);
@@ -157,7 +164,7 @@ namespace Client
                             World.DrawMarker(MarkerType.HorizontalCircleSkinny, truck.GetOffsetPosition(CheckedVehicle.MarkerPos), new Vector3(0f, 0f, 0f), new Vector3(0f, 0f, 0f), new Vector3(1f, 1f, 1f), System.Drawing.Color.FromArgb(255, 0, 0), false, false, true, null, null, false);
                             if (World.GetDistance(LocalPlayer.Character.Position, truck.GetOffsetPosition(CheckedVehicle.MarkerPos)) <= 1.2f)
                             {
-                                Screen.DisplayHelpTextThisFrame($"~INPUT_PICKUP~ Store Saw");
+                                Screen.DisplayHelpTextThisFrame($"~INPUT_PICKUP~ Leg zaag terug");
                                 if (Game.IsControlJustPressed(1, Control.Pickup))
                                 {
                                     StoreSaw();
@@ -227,11 +234,19 @@ namespace Client
         // Create Saw Method
         private async Task RetrieveSaw()
         {
-            await LocalPlayer.Character.Task.PlayAnimation(AnimDict, AnimName, -8f, 8f, -1, AnimationFlags.StayInEndFrame | AnimationFlags.UpperBodyOnly | AnimationFlags.AllowRotation, 8f);
-            Vector3 PlayerPos = LocalPlayer.Character.GetOffsetPosition(new Vector3(0f, 1f, 0f));
-            CurrentSaw = await World.CreateProp(SawModel, PlayerPos, true, true);
-            CurrentSawNetHandle = API.NetworkGetNetworkIdFromEntity(CurrentSaw.Handle);
-            CurrentSaw.AttachTo(LocalPlayer.Character.Bones[Bone.SKEL_R_Hand], new Vector3(0.095f, 0f, 0f), new Vector3(125f, 155f, 55f));
+            if (correctjob == true)
+            {
+                await LocalPlayer.Character.Task.PlayAnimation(AnimDict, AnimName, -8f, 8f, -1, AnimationFlags.StayInEndFrame | AnimationFlags.UpperBodyOnly | AnimationFlags.AllowRotation, 8f);
+                Vector3 PlayerPos = LocalPlayer.Character.GetOffsetPosition(new Vector3(0f, 1f, 0f));
+                CurrentSaw = await World.CreateProp(SawModel, PlayerPos, true, true);
+                CurrentSawNetHandle = API.NetworkGetNetworkIdFromEntity(CurrentSaw.Handle);
+                CurrentSaw.AttachTo(LocalPlayer.Character.Bones[Bone.SKEL_R_Hand], new Vector3(0.095f, 0f, 0f), new Vector3(125f, 155f, 55f));
+            }
+        }
+
+        private void iscorrectjob(bool goedejob)
+        {
+            correctjob = goedejob;
         }
 
         // Store the saw back into the truck
